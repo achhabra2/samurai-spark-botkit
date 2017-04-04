@@ -26,10 +26,17 @@ This bot demonstrates many of the core features of Botkit:
     -> http://botkit.ai
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~*/
+var env = require('node-env-file');
+env('./.env');
 
 var Botkit = require('botkit');
 var debug = require('debug')('botkit:main');
-var env = require('node-env-file')
+var apiai = require('botkit-middleware-apiai')({
+    token: process.env.apiai_token,
+    skip_bot: true // or false. If true, the middleware don't send the bot reply/says to api.ai
+});
+
+// Create the Botkit controller, which controls all instances of the bot.
 
 
 // Create the Botkit controller, which controls all instances of the bot.
@@ -56,73 +63,40 @@ controller.setupWebserver(3000, function(err, webserver) {
     });
 });
 
-controller.middleware.receive.use(function(bot, message, next) {
+controller.middleware.receive.use(apiai.receive);
 
-  console.log(message);
-  next();
-});
-
-
-// controller.hears(['^markdown'], 'direct_message,direct_mention', function(bot, message) {
+// controller.middleware.receive.use(function(bot, message, next) {
 //
-//     bot.reply(message, {text: '*this is cool*', markdown: '*this is super cool*'});
-//
-// });
-//
-// controller.on('user_space_join', function(bot, message) {
-//     bot.reply(message, 'Welcome, ' + message.original_message.data.personDisplayName);
-// });
-//
-// controller.on('user_space_leave', function(bot, message) {
-//     bot.reply(message, 'Bye, ' + message.original_message.data.personDisplayName);
-// });
-//
-//
-// controller.on('bot_space_join', function(bot, message) {
-//
-//     bot.reply(message, 'This trusty bot is here to help.');
-//
-// });
-//
-//
-// controller.on('direct_mention', function(bot, message) {
-//     bot.reply(message, 'You mentioned me and said, "' + message.text + '"');
-// });
-//
-// controller.on('direct_message', function(bot, message) {
-//     bot.reply(message, 'I got your private message. You said, "' + message.text + '"');
-//     if (message.original_message.files) {
-//         bot.retrieveFileInfo(message.original_message.files[0], function(err, file) {
-//             bot.reply(message,'I also got an attached file called ' + file.filename);
-//         });
-//     }
+//   console.log(message);
+//   next();
 // });
 
-if (process.env.studio_token) {
-    controller.on('direct_message,direct_mention', function(bot, message) {
-        if (message.text) {
-            controller.studio.runTrigger(bot, message.text, message.user, message.channel).then(function(convo) {
-                if (!convo) {
-                    // no trigger was matched
-                    // If you want your bot to respond to every message,
-                    // define a 'fallback' script in Botkit Studio
-                    // and uncomment the line below.
-                    controller.studio.run(bot, 'fallback', message.user, message.channel);
-                } else {
-                    // set variables here that are needed for EVERY script
-                    // use controller.studio.before('script') to set variables specific to a script
-                    convo.setVar('current_time', new Date());
-                }
-            }).catch(function(err) {
-                if (err) {
-                    bot.reply(message, 'I experienced an error with a request to Botkit Studio: ' + err);
-                    debug('Botkit Studio: ', err);
-                }
-            });
-        }
-    });
-} else {
-    console.log('~~~~~~~~~~');
-    console.log('NOTE: Botkit Studio functionality has not been enabled');
-    console.log('To enable, pass in a studio_token parameter with a token from https://studio.botkit.ai/');
-}
+
+// if (process.env.studio_token) {
+//     controller.on('direct_message,direct_mention', function(bot, message) {
+//         if (message.text) {
+//             controller.studio.runTrigger(bot, message.text, message.user, message.channel).then(function(convo) {
+//                 if (!convo) {
+//                     // no trigger was matched
+//                     // If you want your bot to respond to every message,
+//                     // define a 'fallback' script in Botkit Studio
+//                     // and uncomment the line below.
+//                     controller.studio.run(bot, 'fallback', message.user, message.channel);
+//                 } else {
+//                     // set variables here that are needed for EVERY script
+//                     // use controller.studio.before('script') to set variables specific to a script
+//                     convo.setVar('current_time', new Date());
+//                 }
+//             }).catch(function(err) {
+//                 if (err) {
+//                     bot.reply(message, 'I experienced an error with a request to Botkit Studio: ' + err);
+//                     debug('Botkit Studio: ', err);
+//                 }
+//             });
+//         }
+//     });
+// } else {
+//     console.log('~~~~~~~~~~');
+//     console.log('NOTE: Botkit Studio functionality has not been enabled');
+//     console.log('To enable, pass in a studio_token parameter with a token from https://studio.botkit.ai/');
+// }
